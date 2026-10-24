@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Judo-Lerntrainer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: eine Spalte fürs Handy, feste Tab-Leiste unten, jede Frage ein eigener Bildschirm */
+:root{
+  --bg:#edf0f5; --surface:#ffffff; --fg:#17203a; --muted:#566080; --line:#d5dae8;
+  --ink:#233a7c; --ink-fg:#ffffff; --soft:#e2e8f7;
+  --good:#256b48; --good-bg:#dff1e7; --bad:#a8322a; --bad-bg:#f8e1de;
+  --font-d:"Bricolage Grotesque","Hanken Grotesk",system-ui,sans-serif;
+  --font-b:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1323; --surface:#16203a; --fg:#e8ecf7; --muted:#9aa6c8; --line:#29345a;
+    --ink:#93acff; --ink-fg:#0d1323; --soft:#202c4f;
+    --good:#74d3a0; --good-bg:#15352a; --bad:#ff8f84; --bad-bg:#3b1d1f; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1323; --surface:#16203a; --fg:#e8ecf7; --muted:#9aa6c8; --line:#29345a;
+  --ink:#93acff; --ink-fg:#0d1323; --soft:#202c4f;
+  --good:#74d3a0; --good-bg:#15352a; --bad:#ff8f84; --bad-bg:#3b1d1f; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font-b); font-size:16px; line-height:1.45;
+  margin:0; padding-block:14px 104px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;
+}
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--font-d);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1{font-size:1.55rem;line-height:1.1}
+h2{font-size:1.3rem;line-height:1.2}
+h3{font-size:1.05rem}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.mut{color:var(--muted)}
+.eyebrow{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.head{display:flex;flex-direction:column;gap:8px;padding-top:4px}
+.belt{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.belt i{display:block;height:100%;background:var(--ink);border-radius:4px;transition:width .4s}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center}
+.row.sp{justify-content:space-between}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 14px;min-height:42px;font-weight:600;font-size:.93rem}
+.chip.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
+.chip.static{min-height:0;padding:5px 11px;font-weight:500;font-size:.88rem;background:var(--soft);border-color:transparent}
+.chip.static.g{background:var(--ink);color:var(--ink-fg);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 16px;min-height:50px;font-weight:700;text-align:center}
+.btn.primary{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.full{width:100%}
+.modes{display:flex;flex-direction:column;gap:10px}
+.mode{display:flex;justify-content:space-between;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-height:64px}
+.mode b{font-family:var(--font-d);font-size:1.05rem;display:block}
+.mode span{font-size:.88rem;color:var(--muted)}
+.mode .arr{font-size:1.4rem;color:var(--ink);flex:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:10px;font-weight:700;min-height:44px}
+.seg button.on{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+details.grp{border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+details.grp summary{list-style:none;cursor:pointer;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:52px}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary b{font-family:var(--font-d)}
+details.grp summary::after{content:"+";font-size:1.3rem;color:var(--ink);flex:none}
+details.grp[open] summary::after{content:"–"}
+details.grp .in{padding:0 14px 14px;display:flex;flex-wrap:wrap;gap:7px}
+.cnt{font-size:.84rem;color:var(--muted);white-space:nowrap}
+.q{gap:14px}
+.qtop{display:flex;align-items:center;gap:12px}
+.qtop .belt{flex:1}
+.x{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-width:44px;min-height:44px;font-size:1.1rem}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{width:100%;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:13px 14px;min-height:54px;font-weight:600;display:flex;gap:10px;align-items:center}
+.opt .tick{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:none}
+.opts.multi .opt .tick{display:block}
+.opt.on{border-color:var(--ink);background:var(--soft)}
+.opt.on .tick{background:var(--ink);border-color:var(--ink)}
+.opt.good{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.opt.bad{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.opt.miss{border-style:dashed;border-color:var(--good);color:var(--good)}
+.fb{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.fb.good{background:var(--good-bg);color:var(--good)}
+.fb.bad{background:var(--bad-bg);color:var(--bad)}
+.fb p{color:var(--fg);font-size:.95rem}
+.tin{display:flex;gap:8px}
+.tin input{flex:1;min-width:0;font:inherit;padding:13px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);min-height:52px}
+.sg{display:flex;flex-wrap:wrap;gap:8px;min-height:6px}
+.found{display:flex;flex-wrap:wrap;gap:7px}
+.pill{border-radius:999px;padding:6px 12px;font-weight:600;font-size:.9rem}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.miss{border:1px dashed var(--good);color:var(--good)}
+.fc{min-height:230px;justify-content:center;text-align:center;align-items:center}
+.fc .name{font-family:var(--font-d);font-size:1.7rem;line-height:1.15}
+.fc .items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;flex:1;min-width:60px}
+.bar i{display:block;height:100%;background:var(--ink)}
+.prow{display:flex;align-items:center;gap:10px}
+.prow .n{flex:0 0 46%;min-width:0;font-weight:600;font-size:.93rem}
+.prow .c{flex:none;font-size:.82rem;color:var(--muted);min-width:44px;text-align:right}
+.tog{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:56px}
+.tog .box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--line)}
+.tog.on .box{background:var(--ink);border-color:var(--ink)}
+.tog small{display:block;color:var(--muted);font-size:.8rem}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+.nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.nav button{border:0;background:transparent;padding:12px 4px 11px;min-height:56px;font-weight:600;font-size:.78rem;color:var(--muted);position:relative}
+.nav button.on{color:var(--ink)}
+.nav button.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:.9rem;font-weight:600;z-index:30;max-width:90vw}
+.res{display:flex;flex-direction:column;gap:8px}
+.hit{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;min-height:56px;display:flex;flex-direction:column;gap:1px}
+.hit b{font-family:var(--font-d)}
+.hit span{font-size:.84rem;color:var(--muted)}
+a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit}
+.kv{display:flex;flex-direction:column;gap:2px}
+.kv small{color:var(--muted);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand h1{min-width:0}
+.logo{height:44px;width:auto;max-width:72px;object-fit:contain;border-radius:8px;flex:none}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.big{font-family:var(--font-d);font-size:2.6rem;line-height:1}
+@media (prefers-reduced-motion:reduce){.belt i{transition:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+<nav class="nav" id="nav"><div class="in">
+  <button data-a="tab" data-v="lern">Lernen</button>
+  <button data-a="tab" data-v="quiz">Quiz</button>
+  <button data-a="tab" data-v="such">Suche</button>
+  <button data-a="tab" data-v="prog">Fortschritt</button>
+  <button data-a="tab" data-v="stoff">Stoff</button>
+</div></nav>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= DATEN ================= */
+const GKN=['Dai-ikkyo','Dai-nikyo','Dai-sankyo','Dai-yonkyo','Dai-gokyo'];
+const WGN={te:'Te-Waza',koshi:'Koshi-Waza',ashi:'Ashi-Waza',ma:'Ma-Sutemi-Waza',yoko:'Yoko-Sutemi-Waza'};
+// [Name, Wurfgruppe, Gokyo-Gruppe (0 = außerhalb der Gokyo), S/H = Shinmeisho/Habukareta, Hinweis, Aliase]
+const RAW=[
+['De-Ashi-Barai','ashi',1,'','',['De-Ashi-Harai']],['Hiza-Guruma','ashi',1],['Sasae-Tsuri-Komi-Ashi','ashi',1],['Uki-Goshi','koshi',1],
+['O-Soto-Gari','ashi',1],['O-Goshi','koshi',1],['O-Uchi-Gari','ashi',1],['Seoi-Nage','te',1],
+['Ko-Soto-Gari','ashi',2],['Ko-Uchi-Gari','ashi',2],['Koshi-Guruma','koshi',2],['Tsuri-Komi-Goshi','koshi',2],
+['Okuri-Ashi-Barai','ashi',2,'','',['Okuri-Ashi-Harai']],['Tai-O-Toshi','te',2],['Harai-Goshi','koshi',2],['Uchi-Mata','ashi',2],
+['Ko-Soto-Gake','ashi',3],['Tsuri-Goshi','koshi',3],['Yoko-O-Toshi','yoko',3],['Ashi-Guruma','ashi',3],
+['Hane-Goshi','koshi',3],['Harai-Tsuri-Komi-Ashi','ashi',3],['Tomoe-Nage','ma',3],['Kata-Guruma','te',3],
+['Sumi-Gaeshi','ma',4],['Tani-O-Toshi','yoko',4],['Hane-Maki-Komi','yoko',4],['Sukui-Nage','te',4],
+['Utsuri-Goshi','koshi',4],['O-Guruma','ashi',4],['Soto-Maki-Komi','yoko',4],['Uki-O-Toshi','te',4],
+['O-Soto-Guruma','ashi',5],['Uki-Waza','yoko',5],['Yoko-Wakare','yoko',5],['Yoko-Guruma','yoko',5],
+['Ushiro-Goshi','koshi',5],['Ura-Nage','ma',5],['Sumi-O-Toshi','te',5],['Yoko-Gake','yoko',5],
+// außerhalb der Gokyo
+['Morote-Seoi-Nage','te',0,'','Zusatzwurf'],
+['Sode-Tsuri-Komi-Goshi','koshi',0,'S','Shinmeisho-Waza'],
+['Yama-Arashi','te',0,'H','Habukareta-Waza'],
+['Hikkomi-Gaeshi','ma',0,'H','Habukareta-Waza'],
+['Tawara-Gaeshi','ma',0,'H','Habukareta-Waza'],
+['Obi-O-Toshi','te',0,'H','Habukareta-Waza'],
+['Ippon-Seoi-Nage','te',0,'S','Shinmeisho-Waza'],
+['O-Soto-Gaeshi','ashi',0,'S','Shinmeisho-Waza'],
+['O-Soto-O-Toshi','ashi',0,'H','Habukareta-Waza'],
+['Tsubame-Gaeshi','ashi',0,'S','Shinmeisho-Waza'],
+['Uchi-Makikomi','yoko',0,'H','Habukareta-Waza'],
+['Daki-Wakare','yoko',0,'H','Habukareta-Waza'],
+['Ko-Uchi-Makikomi','yoko',0,'S','Shinmeisho-Waza'],
+['Ashi-Uchi-Mata','ashi',0,'','nur in Kombinationen'],
+['Ko-Uchi-Gake','ashi',0,'','nur in Kombinationen']
+];
+const N=RAW.map((r,i)=>({id:'n'+i,dom:'n',name:r[0],wg:r[1],gk:r[2],hab:r[3]||'',tag:r[4]||'',alias:r[5]||[],extra:r[2]===0}));
+const OBER=[{id:'osae',n:'Osae-Komi-Waza'},{id:'kansetsu',n:'Kansetsu-Waza'},{id:'shime',n:'Shime-Waza'}];
+// Gruppe: erster Eintrag = Grundform
+const KG=[
+{id:'kesa',n:'Kesa-Gatame',o:'osae',m:['Hon-Kesa-Gatame','Makura-Kesa-Gatame','Kashia-Kesa-Gatame','Gyaku-Kesa-Gatame','Kuzure-Kesa-Gatame','Uki-Gatame']},
+{id:'yoko',n:'Yoko-Shiho-Gatame',o:'osae',m:['Yoko-Shiho-Gatame','Mune-Shiho-Gatame','Gyaku-Shiho-Gatame','Kuzure-Yoko-Shiho-Gatame','Kata-Osae-Gatame']},
+{id:'tate',n:'Tate-Shiho-Gatame',o:'osae',m:['Tate-Shiho-Gatame','Tate-Sankaku-Gatame','Kuzure-Tate-Shiho-Gatame']},
+{id:'kami',n:'Kami-Shiho-Gatame',o:'osae',m:['Kami-Shiho-Gatame','Kuzure-Kami-Shiho-Gatame','Kami-Eri-Shiho-Gatame','Kami-Sankaku-Gatame']},
+{id:'kata',n:'Kata-Gatame',o:'osae',m:['Kata-Gatame']},
+{id:'juji',n:'Juji-Gatame',o:'kansetsu',m:['Ude-Hishigi-Juji-Gatame','Gyaku-Juji-Gatame','Kami-Juji-Gatame','Yoko-Juji-Gatame','Oten-Gatame','Nami-Juji-Gatame']},
+{id:'ude',n:'Ude-Gatame',o:'kansetsu',m:['Ude-Gatame','Gyaku-Ude-Gatame','Mune-Ude-Gatame','Hiji-Maki-Komi','Kuzure-Hiji-Maki-Komi']},
+{id:'ashig',n:'Ashi-Gatame',o:'kansetsu',m:['Ashi-Gatame','Hiza-Gatame','Yoko-Hiza-Gatame','Ryo-Hiza-Gatame','Kesa-Ashi-Gatame']},
+{id:'waki',n:'Waki-Gatame',o:'kansetsu',m:['Waki-Gatame','Gyaku-Waki-Gatame']},
+{id:'hara',n:'Hara-Gatame',o:'kansetsu',m:['Hara-Gatame','Gyaku-Hara-Gatame']},
+{id:'kann',n:'Kannuki-Gatame',o:'kansetsu',m:['Kannuki-Gatame','Kuzure-Kannuki-Gatame','Gyaku-Kannuki-Gatame','Kami-Shiho-Kannuki-Gatame','Ryo-Kannuki-Gatame']},
+{id:'garami',n:'Ude-Garami',o:'kansetsu',m:['Ude-Garami','Gyaku-Ude-Garami','Kesa-Garami','Gyaku-Kesa-Garami','Waki-Garami','Ashi-Garami','Hara-Garami']},
+{id:'jjime',n:'Juji-Jime',o:'shime',m:['Nami-Juji-Jime','Kata-Juji-Jime','Yoko-Juji-Jime','Gyaku-Juji-Jime','Kuzure-Juji-Jime','Tomoe-Jime','Sode-Guruma']},
+{id:'ryote',n:'Ryote-Jime',o:'shime',m:['Ryote-Jime','Maki-Komi-Jime','Kami-Shiho-Ryote-Jime']},
+{id:'hadaka',n:'Hadaka-Jime',o:'shime',m:['Hadaka-Jime','Ushiro-Jime','Sankaku-Jime']},
+{id:'kataha',n:'Kataha-Jime',o:'shime',m:['Kataha-Jime','Kaeshi-Jime','Gyaku-Kataha-Jime','Oten-Jime']},
+{id:'katate',n:'Katate-Jime',o:'shime',m:['Katate-Jime','Tsuki-Komi-Jime','Ebi-Jime','Hasami-Jime']},
+{id:'okuri',n:'Okuri-Eri-Jime',o:'shime',m:['Okuri-Eri-Jime','Gyaku-Okuri-Eri-Jime']},
+{id:'ashij',n:'Ashi-Jime',o:'shime',m:['Ashi-Jime','Kata-Jime','Kagato-Jime','Kami-Shiho-Ashi-Jime']}
+];
+const KAL={'Hon-Kesa-Gatame':['Kesa-Gatame'],'Gyaku-Shiho-Gatame':['Ura-Shiho-Gatame','Gyaku-Yoko-Shiho-Gatame'],
+ 'Kami-Eri-Shiho-Gatame':['Ura-Kami-Shiho-Gatame'],'Ude-Hishigi-Juji-Gatame':['Juji-Gatame'],'Nami-Juji-Jime':['Juji-Jime'],
+ 'Kuzure-Kami-Shiho-Gatame':['Kurzure-Shiho-Gatame'],'Kata-Osae-Gatame':['Kata-Osae']};
+const K=[];
+KG.forEach(g=>g.m.forEach((nm,i)=>K.push({id:'k'+K.length,dom:'k',name:nm,g:g.id,o:g.o,grund:i===0,alias:KAL[nm]||[]})));
+
+const COMBOS=[
+{t:'Kombination',a:'Harai-Goshi',r:'Hüftblock UKE',b:'O-Soto-Gari'},
+{t:'Kombination',a:'Ashi-Uchi-Mata',r:'Hüftblock UKE',b:'Ko-Uchi-Gake'},
+{t:'Kombination',a:'Tai-O-Toshi',r:'Übersteigen UKE',b:'Tai-O-Toshi'},
+{t:'Finte',a:'Ko-Uchi-Gari',r:'Ausweichen UKE',b:'Ashi-Uchi-Mata'},
+{t:'Finte',a:'O-Uchi-Gari',r:'Ausweichen UKE',b:'Ko-Uchi-Gari'},
+{t:'Finte',a:'Sasae-Tsuri-Komi-Ashi',r:'Übersteigen UKE',b:'Ashi-Uchi-Mata'},
+{t:'Konter',a:'Seoi-Nage',r:'Hüftblock TORI',b:'Tani-O-Toshi'},
+{t:'Konter',a:'De-Ashi-Barai',r:'Ausweichen TORI',b:'Tsubame-Gaeshi'},
+{t:'Konter',a:'Tai-O-Toshi',r:'Übersteigen TORI',b:'Ko-Soto-Gake',alt:'Ko-Soto-Maki-Komi'}
+];
+
+/* ================= NACHSCHLAGEN ================= */
+// Deutsche Bezeichnungen: deutscher Wikipedia-Artikel zur Gokyō-Einteilung (Spiegel de-academic.com). Verbandsnamen können abweichen.
+const DE={'De-Ashi-Barai':'Fußfegen','Hiza-Guruma':'Knierad','Sasae-Tsuri-Komi-Ashi':'Hebezugfußhalten','Uki-Goshi':'Hüftschwung',
+'O-Soto-Gari':'Große Außensichel','O-Goshi':'Großer Hüftwurf','O-Uchi-Gari':'Große Innensichel','Seoi-Nage':'Schulterwurf',
+'Ko-Soto-Gari':'Kleine Außensichel','Ko-Uchi-Gari':'Kleine Innensichel','Koshi-Guruma':'Hüftrad','Tsuri-Komi-Goshi':'Hebehüftwurf',
+'Okuri-Ashi-Barai':'Fußnachfegen','Tai-O-Toshi':'Körperwurf','Harai-Goshi':'Hüftfeger','Uchi-Mata':'Innenschenkelwurf',
+'Ko-Soto-Gake':'Kleines Einhaken','Tsuri-Goshi':'Hüftzug','Yoko-O-Toshi':'Seitfallzug','Ashi-Guruma':'Beinrad','Hane-Goshi':'Hüftspringwurf',
+'Harai-Tsuri-Komi-Ashi':'Hebezugfußfegen','Tomoe-Nage':'Kreiswurf','Kata-Guruma':'Schulterrad','Sumi-Gaeshi':'Eckenwurf',
+'Tani-O-Toshi':'Talfallzug','Hane-Maki-Komi':'Springdrehwurf','Sukui-Nage':'Schaufelwurf','Utsuri-Goshi':'Wechselhüftwurf','O-Guruma':'Großes Rad',
+'Soto-Maki-Komi':'Außendrehwurf','Uki-O-Toshi':'Schwebehandzug','O-Soto-Guruma':'Großes Außenrad','Uki-Waza':'Rückfallzug','Yoko-Wakare':'Seitenriss',
+'Yoko-Guruma':'Seitenrad','Ushiro-Goshi':'Hüftgegenwurf','Ura-Nage':'Rückwurf','Sumi-O-Toshi':'Eckenkippe','Yoko-Gake':'Seitliches Einhängen',
+'O-Soto-O-Toshi':'Großer Außensturz'};
+// Videos: Kanal KODOKAN, Reihe KODOKAN × IJF ACADEMY 100 Techniques (Video-ID, Titel auf YouTube)
+const VID={"De-Ashi-Barai":["4BUUvqxi_Kk","出足払 / De-ashi-harai"],"Hiza-Guruma":["JPJx9-oAVns","膝車 / Hiza-guruma"],"Sasae-Tsuri-Komi-Ashi":["699i--pvYmE","支釣込足 / Sasae-tsurikomi-ashi"],"Uki-Goshi":["bPKwtB4lyOQ","浮腰 / Uki-goshi"],"O-Soto-Gari":["c-A_nP7mKAc","大外刈 / O-soto-gari"],"O-Goshi":["yhu1mfy2vJ4","大腰 / O-goshi"],"O-Uchi-Gari":["0itJFhV9pDQ","大内刈 / O-uchi-gari"],"Seoi-Nage":["zIq0xI0ogxk","背負投 / Seoi-nage"],"Ko-Soto-Gari":["jeQ541ScLB4","小外刈 / Ko-soto-gari"],"Ko-Uchi-Gari":["3Jb3tZvr9Ng","小内刈 / Ko-uchi-gari"],"Koshi-Guruma":["SU7Id6uVJ44","腰車 / Koshi-guruma"],"Tsuri-Komi-Goshi":["McfzA0yRVt4","釣込腰 / Tsurikomi-goshi"],"Okuri-Ashi-Barai":["nw1ZdRjrdRI","送足払 / Okuri-ashi-harai"],"Tai-O-Toshi":["4x6S3Q-Ktv8","体落 / Tai-otoshi"],"Harai-Goshi":["qTo8HlAAkOo","払腰 / Harai-goshi"],"Uchi-Mata":["iUpSu5J-bgw","内股 / Uchi-mata"],"Ko-Soto-Gake":["8b6kY4s4zH4","小外掛 / Ko-soto-gake"],"Tsuri-Goshi":["51Htlp7xEvE","釣腰 / Tsuri-goshi"],"Yoko-O-Toshi":["MnNG67pF_a0","横落 / Yoko-otoshi"],"Ashi-Guruma":["ROeayhvom9U","足車 / Ashi-guruma"],"Hane-Goshi":["M9_7De6A1kk","跳腰 / Hane-goshi"],"Harai-Tsuri-Komi-Ashi":["gGPXvWL8VbE","払釣込足 / Harai-tsurikomi-ashi"],"Tomoe-Nage":["880WbHvHv6A","巴投 / Tomoe-nage"],"Kata-Guruma":["cnHRhSy8yi4","肩車 / Kata-guruma"],"Sumi-Gaeshi":["5VhduA5xkbA","隅返 / Sumi-gaeshi"],"Tani-O-Toshi":["3b9Me3Fohpk","谷落 / Tani-otoshi"],"Hane-Maki-Komi":["6CRBGLGz9j8","跳巻込 / Hane-makikomi"],"Sukui-Nage":["B18U2SHhQ-s","掬投 & 帯落 / Sukui-nage & Obi-otoshi"],"Utsuri-Goshi":["4pQd_bEnlf0","移腰 / Utsuri-goshi"],"O-Guruma":["SnZciTAY9vc","大車 / O-guruma"],"Soto-Maki-Komi":["bWG9O1BVKtQ","外巻込 / Soto-makikomi"],"Uki-O-Toshi":["6H5tmncOY4Q","浮落 / Uki-otoshi"],"O-Soto-Guruma":["92KbCm6pQeI","大外車 / O-soto-guruma"],"Uki-Waza":["weVOpJ63gII","浮技 / Uki-waza"],"Yoko-Wakare":["bp1tscHlePI","横分 / Yoko-wakare"],"Yoko-Guruma":["MehP6I5cY2c","横車 / Yoko-guruma"],"Ushiro-Goshi":["ORIYstuxYT8","後腰 / Ushiro-goshi"],"Ura-Nage":["Fgi9b8DJ5sQ","裏投 / Ura-nage"],"Sumi-O-Toshi":["lLU9wv52ni0","隅落 / Sumi-otoshi"],"Yoko-Gake":["tP1Sj1uDfSo","横掛 / Yoko-gake"],"Sode-Tsuri-Komi-Goshi":["QsmAxpmYLOI","袖釣込腰 / Sode-tsurikomi-goshi"],"Yama-Arashi":["MGlyKmSuzdc","山嵐 / Yama-arashi"],"Hikkomi-Gaeshi":["92zUYWBp5N8","引込返 / Hikikomi-gaeshi"],"Tawara-Gaeshi":["TmTWgrmViZc","俵返 / Tawara-gaeshi"],"Obi-O-Toshi":["B18U2SHhQ-s","掬投 & 帯落 / Sukui-nage & Obi-otoshi"],"Ippon-Seoi-Nage":["FQnOlCxo4oI","一本背負投 / Ippon-seoi-nage"],"O-Soto-Gaeshi":["8ZjM3X_EANo","大外返 / O-soto-gaeshi"],"O-Soto-O-Toshi":["2DsVvDw7b8g","大外落 / O-soto-otoshi"],"Tsubame-Gaeshi":["GwweWqqFB5g","燕返 / Tsubame-gaeshi"],"Uchi-Makikomi":["5BowcjduxVc","内巻込 / Uchi-makikomi"],"Daki-Wakare":["Hr0cOMGBDYo","抱分 / Daki-wakare"],"Ko-Uchi-Makikomi":["_1eygIXLD_w","小内巻込 / Ko-uchi-makikomi"],"Hon-Kesa-Gatame":["NDaQuJOFBYk","袈裟固 / Kesa-gatame"],"Kuzure-Kesa-Gatame":["Q2fb9jaoUFQ","崩袈裟固 / Kuzure-kesa-gatame"],"Kata-Gatame":["zQR3IOXxO_Q","肩固 / Kata-gatame"],"Yoko-Shiho-Gatame":["TT7XJVSEQxA","横四方固 / Yoko-shiho-gatame"],"Tate-Shiho-Gatame":["55-rFmBx53g","縦四方固 / Tate-shiho-gatame"],"Kami-Shiho-Gatame":["HFuMjOv0WN8","上四方固 / Kami-shiho-gatame"],"Kuzure-Kami-Shiho-Gatame":["YUrogQWdwiY","崩上四方固 / Kuzure-kami-shiho-gatame"],"Ude-Hishigi-Juji-Gatame":["OWgSOlCuMXw","腕挫十字固 / Ude-hishigi-juji-gatame"],"Hiza-Gatame":["H2HtAJdiJcE","腕挫膝固 / Ude-hishigi-hiza-gatame"],"Hara-Gatame":["ZzEycg8R_9M","腕挫腹固 / Ude-hishigi-hara-gatame"],"Ashi-Gatame":["ClY7g_pX-4s","腕挫脚固 / Ude-hishigi-ashi-gatame"],"Ude-Garami":["AIlTvZb4RlE","腕緘 / Ude-garami"],"Ashi-Garami":["BWWb0GoAtZw","足緘 / Ashi-garami"],"Nami-Juji-Jime":["k2cHry9HByQ","並十字絞 / Nami-juji-jime"],"Gyaku-Juji-Jime":["t3tQriIPdlI","逆十字絞 / Gyaku-juji-jime"],"Kata-Juji-Jime":["3VZVUAmiMD8","片十字絞 / Kata-juji-jime"],"Hadaka-Jime":["9f0n8jez7iA","裸絞 / Hadaka-jime"],"Okuri-Eri-Jime":["EiqyoVcIAi8","送襟絞 / Okuri-eri-jime"],"Kataha-Jime":["yaTGgRjnwB8","片羽絞 / Kataha-jime"],"Katate-Jime":["cHeIs-fSqwE","片手絞 / Katate-jime"],"Ryote-Jime":["-RHC4V7TQiY","両手絞 / Ryote-jime"],"Sode-Guruma":["E3nvQzClcAU","袖車絞 / Sode-guruma-jime"],"Sankaku-Jime":["lq1CUBRAm7s","三角絞 / Sankaku-jime"]};
+// Wortbausteine zur Orientierung (sinngemäß)
+const GL={ko:'klein',o:'groß',uchi:'innen',soto:'außen',ashi:'Fuß/Bein',te:'Hand',koshi:'Hüfte',goshi:'Hüfte',guruma:'Rad',gari:'Sichel',gake:'Einhängen',
+nage:'Wurf',otoshi:'Sturz/Fall',gaeshi:'Konter/Umkehr',harai:'fegen',barai:'fegen',yoko:'seitlich',ura:'rückwärts/umgekehrt',ushiro:'hinten',uki:'schwebend',
+sumi:'Ecke',tani:'Tal',tomoe:'Kreis',mata:'Schenkel',sukui:'schöpfen',tsuri:'heben',hane:'Feder/Sprung',tai:'Körper',morote:'beide Hände',sasae:'stützen',
+okuri:'nachziehen',wakare:'trennen',daki:'umklammern',tawara:'Reisballen',hikkomi:'hineinziehen',yama:'Berg',arashi:'Sturm',obi:'Gürtel',tsubame:'Schwalbe',
+gatame:'Festlegen/Haltegriff',jime:'Würgen',garami:'Verschlingen',juji:'Kreuz',kesa:'Schärpe',shiho:'vier Richtungen',kami:'oben',tate:'längs',mune:'Brust',
+kuzure:'abgewandelt',gyaku:'umgekehrt',hon:'Grund-',nami:'normal',ude:'Arm',hiza:'Knie',waki:'Achsel',hara:'Bauch',hadaka:'nackt',eri:'Kragen',ryo:'beide',
+ryote:'beide Hände',katate:'eine Hand',sankaku:'Dreieck',sode:'Ärmel',ebi:'Garnele',hasami:'Schere',kagato:'Ferse',kaeshi:'umkehren',makura:'Kopfkissen',
+hiji:'Ellbogen',tsuki:'stoßen'};
+function bausteine(name){
+  const parts=name.replace(/-O-Toshi/g,'-Otoshi').split('-').map(x=>x.toLowerCase());
+  const out=[]; parts.forEach(x=>{ if(GL[x])out.push(x.charAt(0).toUpperCase()+x.slice(1)+' = '+GL[x]); });
+  return out;
+}
+const E={};
+function mkE(id,name,kind,desc,kids){E[id]={id,name,kind,desc,kids};}
+mkE('e:nage','Nage-Waza','Oberbegriff','Wurftechniken. Gliedert sich in Te-, Koshi-, Ashi-, Ma-Sutemi- und Yoko-Sutemi-Waza.',Object.keys(WGN).map(k=>'e:wg_'+k));
+mkE('e:katame','Katame-Waza','Oberbegriff','Bodentechniken: Osae-Komi-Waza (Haltetechniken), Kansetsu-Waza (Hebeltechniken) und Shime-Waza (Würgetechniken).',['e:o_osae','e:o_kansetsu','e:o_shime']);
+mkE('e:gokyo','Gokyo','Oberbegriff','Gokyo no waza: die 40 Grundwürfe in fünf Lehrgruppen (Dai-ikkyo bis Dai-gokyo).',GKN.map((n,i)=>'e:gk'+(i+1)));
+const WD={te:'Handtechniken: Der Wurf wird vor allem mit Armen und Händen ausgeführt.',koshi:'Hüfttechniken: Der Wurf geschieht über oder mit der Hüfte.',
+ashi:'Fußtechniken: Der Wurf geschieht mit Fuß oder Bein (fegen, sicheln, einhängen).',ma:'Rückopfertechniken: Tori lässt sich nach hinten fallen, um Uke zu werfen.',
+yoko:'Seitopfertechniken: Tori fällt zur Seite, um Uke zu werfen.'};
+Object.keys(WGN).forEach(k=>mkE('e:wg_'+k,WGN[k],'Wurfgruppe',WD[k],N.filter(x=>x.wg===k).map(x=>x.id)));
+GKN.forEach((n,i)=>mkE('e:gk'+(i+1),n,'Gokyo-Gruppe',(i+1)+'. Gruppe der Gokyo (8 Würfe).',N.filter(x=>x.gk===i+1).map(x=>x.id)));
+mkE('e:hS','Shinmeisho-Waza','Wurfgruppe','Shinmeisho no waza: nachträglich aufgenommene (neu benannte) Techniken.',N.filter(x=>x.hab==='S').map(x=>x.id));
+mkE('e:hH','Habukareta-Waza','Wurfgruppe','Habukareta waza: Techniken, die nicht in der Gokyo enthalten sind (ausgelassene Techniken).',N.filter(x=>x.hab==='H').map(x=>x.id));
+const OD={osae:'Haltetechniken: Uke wird am Boden auf dem Rücken festgehalten.',kansetsu:'Hebeltechniken: Hebel gegen Ellbogen und andere Gelenke.',shime:'Würgetechniken: Würgen oder Abdrücken am Hals.'};
+OBER.forEach(o=>mkE('e:o_'+o.id,o.n,'Oberbegriff Boden',OD[o.id],KG.filter(g=>g.o===o.id).map(g=>'e:kg_'+g.id)));
+KG.forEach(g=>mkE('e:kg_'+g.id,g.n,'Bodengruppe','Gruppe der '+OBER.find(o=>o.id===g.o).n+'. Die Grundform steht zuerst.',K.filter(x=>x.g===g.id).map(x=>x.id)));
+const SEARCH=[];
+Object.values(E).forEach(e=>SEARCH.push({id:e.id,name:e.name,sub:e.kind,keys:[e.name]}));
+N.forEach(x=>SEARCH.push({id:x.id,name:x.name,sub:WGN[x.wg]+(x.gk?' · '+GKN[x.gk-1]:' · außerhalb der Gokyo')+(DE[x.name]?' · '+DE[x.name]:'')+(VID[x.name]?' · Video':''),keys:[x.name].concat(x.alias,DE[x.name]?[DE[x.name]]:[])}));
+K.forEach(x=>SEARCH.push({id:x.id,name:x.name,sub:OBER.find(o=>o.id===x.o).n+' · '+KG.find(g=>g.id===x.g).n+(VID[x.name]?' · Video':''),keys:[x.name].concat(x.alias)}));
+SEARCH.forEach(r=>{r.nk=r.keys.map(k=>String(k).replace(/ß/g,'ss')).map(k=>norm(k));});
+const YT_PL='https://www.youtube.com/playlist?list=PLtz539PTepc16H2iu5F3Q3D7_He1EYlIQ';
+
+/* ================= ZUSTAND ================= */
+const LS='judo-lerntrainer-v1';
+let S={off:[],combo:true,q:{},i:{},c:{},vl:{},t:0};
+try{const r=localStorage.getItem(LS);if(r){S=Object.assign(S,JSON.parse(r));}}catch(e){}
+let ref=null,tmr=null,busy=false,pend=false;
+async function pushRemote(){
+  if(!ref)return; if(busy){pend=true;return;} busy=true;
+  try{await ref.set({t:S.t,blob:JSON.stringify(S)});}catch(e){}
+  busy=false; if(pend){pend=false;pushRemote();}
+}
+function save(){
+  S.t=Date.now();
+  try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+  clearTimeout(tmr); tmr=setTimeout(pushRemote,1200);
+}
+async function initRemote(){
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const user=await window.claude.use('user'); const db=await window.claude.use('db');
+    if(!user||!db)return; const id=await user.id(); if(!id)return;
+    ref=db.doc('data/users/'+id+'/lerntrainer');
+    const snap=await ref.get();
+    if(snap.exists){
+      const d=snap.data();
+      if(d&&d.blob&&d.t>(S.t||0)){
+        const r=JSON.parse(d.blob); S=Object.assign({off:[],combo:true,q:{},i:{},c:{},vl:{},t:0},r);
+        try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+        if(!V.quiz.sess)render();
+      } else if(!d||(d.t||0)<(S.t||0)){pushRemote();}
+    } else if(S.t){pushRemote();}
+  }catch(e){}
+}
+
+/* ================= HILFEN ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rnd=n=>Math.floor(Math.random()*n);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick=(a,n)=>shuffle(a).slice(0,n);
+function norm(s){
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,'')
+    .replace(/barai|barei|harei/g,'harai').replace(/seio/g,'seoi').replace(/shio/g,'shiho')
+    .replace(/kuruma/g,'guruma').replace(/shime/g,'jime').replace(/kasehi/g,'kataha');
+}
+function lev(a,b){
+  const m=a.length,n=b.length; if(!m)return n; if(!n)return m;
+  let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++){c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));}p=c;}
+  return p[n];
+}
+function resolve(text,pool){
+  const n=norm(text); if(n.length<3)return null;
+  for(const it of pool){ if(norm(it.name)===n||it.alias.some(a=>norm(a)===n))return it; }
+  const lim=n.length>=12?2:(n.length>=6?1:0); if(!lim)return null;
+  let best=null,bd=99,tie=false;
+  for(const it of pool){
+    const d=Math.min(lev(n,norm(it.name)),...it.alias.map(a=>lev(n,norm(a))));
+    if(d<bd){bd=d;best=it;tie=false;}else if(d===bd&&it!==best){tie=true;}
+  }
+  return (bd<=lim&&!tie)?best:null;
+}
+const actN=()=>N.filter(x=>!x.extra||!S.off.includes(x.id));
+const byId=id=>N.find(x=>x.id===id)||K.find(x=>x.id===id);
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{e.hidden=true;},1800);}
+function rec(key,ok){const o=S.q[key]||{s:0,w:0,c:0};if(ok){o.s++;o.c++;}else{o.s=0;o.w++;}S.q[key]=o;}
+function recItem(id,ok){const o=S.i[id]||{s:0,r:0,w:0};if(ok){o.s++;o.r++;}else{o.s=0;o.w++;}S.i[id]=o;}
+const sure=id=>S.i[id]&&S.i[id].s>=2;
+
+/* ================= THEMEN ================= */
+const kg=o=>KG.filter(g=>!o||g.o===o).map(g=>({id:g.id,n:g.n,o:g.o,items:K.filter(x=>x.g===g.id)}));
+const THEMES=[
+{id:'wurf',label:'Wurfgruppen (Gokyo)',dom:'n',modes:['cls','multi','type'],cls:n=>`Zu welcher Wurfgruppe gehört ${n}?`,
+  groups:()=>Object.keys(WGN).map(k=>({id:'wg_'+k,n:WGN[k],items:actN().filter(x=>x.wg===k)}))},
+{id:'hab',label:'Shinmeisho / Habukareta',dom:'n',modes:['cls','multi','type'],cls:n=>`Ist ${n} ein Shinmeisho- oder ein Habukareta-Waza?`,
+  groups:()=>[{id:'hS',n:'Shinmeisho-Waza',items:actN().filter(x=>x.hab==='S')},{id:'hH',n:'Habukareta-Waza',items:actN().filter(x=>x.hab==='H')}]},
+{id:'boden',label:'Bodengruppen',dom:'k',modes:['cls','multi','type','grund','odd'],cls:n=>`Zu welcher Bodengruppe gehört ${n}?`,groups:()=>kg()},
+{id:'osae',label:'Osae-Komi-Waza',dom:'k',modes:['cls','multi','type','grund','odd'],cls:n=>`Zu welcher Gruppe der Haltetechniken gehört ${n}?`,groups:()=>kg('osae')},
+{id:'kansetsu',label:'Kansetsu-Waza',dom:'k',modes:['cls','multi','type','grund','odd'],cls:n=>`Zu welcher Gruppe der Hebel gehört ${n}?`,groups:()=>kg('kansetsu')},
+{id:'shime',label:'Shime-Waza',dom:'k',modes:['cls','multi','type','grund','odd'],cls:n=>`Zu welcher Gruppe der Würgetechniken gehört ${n}?`,groups:()=>kg('shime')}
+];
+const TH=id=>THEMES.find(t=>t.id===id);
+const MODES=[
+{id:'cls',n:'Gruppe erkennen',d:'Zu welcher Gruppe gehört die Technik?',dom:['n','k']},
+{id:'multi',n:'Gruppe vervollständigen',d:'Mehrfachauswahl: Was gehört zur Gruppe?',dom:['n','k']},
+{id:'type',n:'Gruppe aufzählen',d:'Techniken selbst eingeben, mit Namensvorschlägen',dom:['n','k']},
+{id:'grund',n:'Grundform finden',d:'Welche Technik ist die Grundform der Gruppe?',dom:['k']},
+{id:'odd',n:'Außenseiter finden',d:'Welche Technik gehört nicht zur Gruppe?',dom:['k']},
+{id:'combo',n:'Kombinationen, Finten, Konter',d:'Welcher Wurf folgt?',dom:['n']}
+];
+const outside=(th,g)=>{
+  const oth=th.groups().filter(x=>x.id!==g.id);
+  const near=g.o?oth.filter(x=>x.o===g.o).flatMap(x=>x.items):[];
+  return near.length>=3?near:oth.flatMap(x=>x.items);
+};
+function activeCombos(){
+  if(!S.combo)return[];
+  const names=new Set(actN().map(x=>x.name));
+  return COMBOS.map((c,i)=>({c,i})).filter(o=>names.has(o.c.a)&&names.has(o.c.b));
+}
+function cands(mode,th){
+  if(mode==='combo')return activeCombos().map(o=>`combo|k|${o.i}`);
+  if(!th.modes.includes(mode))return[];
+  const gs=th.groups().filter(g=>g.items.length);
+  if(mode==='cls'){ if(gs.length<2)return[]; return gs.flatMap(g=>g.items.map(it=>`cls|${th.id}|${it.id}`)); }
+  if(mode==='multi')return gs.filter(g=>g.items.length>=2&&outside(th,g).length>=3).map(g=>`multi|${th.id}|${g.id}`);
+  if(mode==='type')return gs.map(g=>`type|${th.id}|${g.id}`);
+  if(mode==='grund')return gs.filter(g=>g.items.length>=2).map(g=>`grund|${th.id}|${g.id}`);
+  if(mode==='odd')return gs.filter(g=>g.items.length>=3&&outside(th,g).length>=1).map(g=>`odd|${th.id}|${g.id}`);
+  return[];
+}
+const themeOk=th=>th.groups().some(g=>g.items.length);
+
+/* ================= FRAGEN ================= */
+function build(key){
+  const [mode,tid,id]=key.split('|'); const th=TH(tid);
+  if(mode==='combo'){
+    const c=COMBOS[+id]; if(!c||!activeCombos().some(o=>o.i===+id))return null;
+    const bi=actN().find(x=>x.name===c.b);
+    const same=actN().filter(x=>x.name!==c.b&&x.name!==c.a&&x.name!==c.alt&&x.wg===bi.wg);
+    const rest=actN().filter(x=>x.name!==c.b&&x.name!==c.a&&x.name!==c.alt&&x.wg!==bi.wg);
+    const ds=pick(same,2).concat(pick(rest,3)).slice(0,3);
+    const opts=shuffle([bi].concat(ds)).map(x=>({id:x.id,label:x.name}));
+    const pr={Kombination:`Tori greift mit ${c.a} an. Reaktion: ${c.r}. Welcher Wurf folgt?`,
+      Finte:`Tori täuscht ${c.a} an. Reaktion: ${c.r}. Welcher Wurf folgt?`,
+      Konter:`Uke greift mit ${c.a} an. Reaktion: ${c.r}. Welcher Konter folgt?`}[c.t];
+    return {key,kind:'single',mode,prompt:pr,sub:c.t,options:opts,correct:[bi.id],itemIds:[],
+      explain:`${c.a} · ${c.r} · ${c.b}${c.alt?' (auch: '+c.alt+')':''}`};
+  }
+  if(!th)return null;
+  const gs=th.groups().filter(g=>g.items.length);
+  if(mode==='cls'){
+    const it=byId(id); const g=gs.find(x=>x.items.some(y=>y.id===id)); if(!it||!g||gs.length<2)return null;
+    let og=gs;
+    if(gs.length>5){
+      const oth=gs.filter(x=>x.id!==g.id), near=g.o?oth.filter(x=>x.o===g.o):[];
+      og=[g].concat(pick(near.length>=3?near:oth,3));
+    }
+    return {key,kind:'single',mode,prompt:th.cls(it.name),sub:th.label,options:shuffle(og).map(x=>({id:x.id,label:x.n})),
+      correct:[g.id],itemIds:[it.id],explain:`${it.name} gehört zu ${g.n}.`};
+  }
+  const g=gs.find(x=>x.id===id); if(!g)return null;
+  if(mode==='multi'){
+    const out=outside(th,g); if(g.items.length<2||out.length<3)return null;
+    const k=Math.min(g.items.length,4+rnd(2)); const d=Math.min(out.length,Math.max(3,8-k));
+    const right=pick(g.items,k), wrong=pick(out,d);
+    return {key,kind:'multi',mode,prompt:`Welche Techniken gehören zu ${g.n}?`,sub:th.label+' · Mehrfachauswahl',
+      options:shuffle(right.concat(wrong)).map(x=>({id:x.id,label:x.name})),correct:right.map(x=>x.id),itemIds:right.concat(wrong).map(x=>x.id),
+      explain:`Zu ${g.n} gehören: ${right.map(x=>x.name).join(', ')}.`};
+  }
+  if(mode==='type'){
+    return {key,kind:'type',mode,prompt:`Nenne die Techniken der Gruppe ${g.n}`,sub:th.label,group:g,dom:th.dom,
+      itemIds:g.items.map(x=>x.id),total:g.items.length};
+  }
+  if(mode==='grund'){
+    if(g.items.length<2)return null;
+    const gr=g.items.find(x=>x.grund)||g.items[0];
+    const oth=g.items.filter(x=>x!==gr); let ds=pick(oth,3);
+    if(ds.length<3)ds=ds.concat(pick(outside(th,g),3-ds.length));
+    return {key,kind:'single',mode,prompt:`Welche Technik ist die Grundform der Gruppe ${g.n}?`,sub:th.label,
+      options:shuffle([gr].concat(ds)).map(x=>({id:x.id,label:x.name})),correct:[gr.id],itemIds:[gr.id],
+      explain:`Grundform von ${g.n} ist ${gr.name}.`};
+  }
+  if(mode==='odd'){
+    const out=outside(th,g); if(g.items.length<3||!out.length)return null;
+    const od=pick(out,1)[0], mem=pick(g.items,3);
+    return {key,kind:'single',mode,prompt:`Welche Technik gehört nicht zur Gruppe ${g.n}?`,sub:th.label,
+      options:shuffle(mem.concat([od])).map(x=>({id:x.id,label:x.name})),correct:[od.id],itemIds:[od.id],
+      explain:`${od.name} gehört nicht zu ${g.n}. Dazu gehören: ${g.items.map(x=>x.name).join(', ')}.`};
+  }
+  return null;
+}
+function pickKeys(all,count){
+  const w=k=>(S.q[k]&&S.q[k].s>=3)?1:0;
+  return shuffle(all).sort((a,b)=>w(a)-w(b)).slice(0,count);
+}
+
+/* ================= ANSICHT-ZUSTAND ================= */
+const V={tab:'lern',lern:{theme:'wurf',deck:null},quiz:{dom:'n',setup:null,sess:null,res:null},such:{q:'',sel:null},resetArm:false};
+
+/* ================= RENDER ================= */
+function overall(){
+  const items=actN().concat(K); const s=items.filter(x=>sure(x.id)).length;
+  return {s,t:items.length};
+}
+const EMBLEM='<svg class="logo" width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="Gürtelknoten"><rect width="44" height="44" rx="10" fill="var(--ink)"/><path d="M5 18h34v7H5z" fill="var(--ink-fg)"/><path d="M17 25l-6 12h7l4-9zM27 25l6 12h-7l-4-9z" fill="var(--ink-fg)"/><rect x="17" y="14" width="10" height="15" rx="3" fill="var(--ink-fg)" stroke="var(--ink)" stroke-width="2.5"/></svg>';
+let fileLogo=false;
+function logoHtml(){
+  if(S.logo)return `<img class="logo" src="${esc(S.logo)}" alt="Vereinslogo">`;
+  if(fileLogo)return '<img class="logo" src="logo.png" alt="Vereinslogo">';
+  return EMBLEM;
+}
+function head(){
+  const o=overall(); const p=o.t?Math.round(o.s/o.t*100):0;
+  return `<div class="head"><div class="row sp"><div class="brand">${logoHtml()}<h1>Judo-Lerntrainer</h1></div><span class="cnt">${o.s} von ${o.t} sicher</span></div>
+  <div class="belt" role="img" aria-label="Gesamtfortschritt ${p} Prozent"><i style="width:${p}%"></i></div></div>`;
+}
+function render(){
+  const app=$('#app'); const inS=!!V.quiz.sess;
+  $('#nav').hidden=inS;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===V.tab));
+  let h='';
+  if(inS)h=viewSess();
+  else if(V.quiz.res&&V.tab==='quiz')h=head()+viewRes();
+  else if(V.tab==='lern')h=head()+(V.lern.deck?viewDeck():viewLern());
+  else if(V.tab==='quiz')h=head()+(V.quiz.setup?viewSetup():viewQuiz());
+  else if(V.tab==='such')h=head()+viewSuche();
+  else if(V.tab==='prog')h=head()+viewProg();
+  else h=head()+viewStoff();
+  app.innerHTML=h;
+  if(inS&&V.quiz.sess.q.kind==='type')typeUpdate();
+  if(!inS&&V.tab==='such'&&!V.quiz.res)suchUpdate();
+}
+
+/* ---- Lernen ---- */
+function viewLern(){
+  const ths=THEMES.filter(themeOk); const th=TH(V.lern.theme)&&themeOk(TH(V.lern.theme))?TH(V.lern.theme):ths[0];
+  const gs=th.groups().filter(g=>g.items.length);
+  let h=`<div class="wrap">${ths.map(t=>`<button class="chip${t.id===th.id?' on':''}" data-a="lthemes" data-v="${t.id}">${esc(t.label)}</button>`).join('')}</div>`;
+  h+=`<div class="modes">${gs.map(g=>{
+    const m=g.items.filter(x=>sure(x.id)).length;
+    const gr=th.dom==='k'&&g.items.length>1;
+    return `<details class="grp"><summary><span><b>${esc(g.n)}</b></span><span class="cnt">${m}/${g.items.length} sicher</span></summary>
+    <div class="in">${g.items.map((x,i)=>`<span class="chip static${gr&&i===0?' g':''}">${esc(x.name)}${gr&&i===0?' · Grundform':''}</span>`).join('')}</div></details>`;
+  }).join('')}</div>`;
+  h+=`<button class="btn primary full" data-a="deck" data-v="${th.id}">Karteikarten starten (${gs.length})</button>`;
+  return h;
+}
+function viewDeck(){
+  const d=V.lern.deck; const th=TH(d.th); const gs=th.groups();
+  if(d.i>=d.order.length){
+    return `<div class="card fc"><div class="big">✓</div><h2>Stapel durch</h2><p class="mut">Gewusst: ${d.ok} von ${d.order.length}</p>
+    <div class="two" style="width:100%"><button class="btn" data-a="deck-exit">Zurück</button><button class="btn primary" data-a="deck" data-v="${th.id}">Neu mischen</button></div></div>`;
+  }
+  const g=gs.find(x=>x.id===d.order[d.i]); const gr=th.dom==='k'&&g.items.length>1;
+  let h=`<div class="qtop"><button class="x" data-a="deck-exit" aria-label="Beenden">✕</button><div class="belt"><i style="width:${Math.round(d.i/d.order.length*100)}%"></i></div><span class="cnt">${d.i+1}/${d.order.length}</span></div>`;
+  h+=`<div class="card fc"><div class="eyebrow">${esc(th.label)}</div><div class="name">${esc(g.n)}</div>`;
+  if(!d.flip){
+    h+=`<p class="mut">${g.items.length} ${g.items.length===1?'Technik':'Techniken'}. Kannst du sie nennen?</p>
+    <button class="btn primary full" data-a="deck-flip">Aufdecken</button>`;
+  } else {
+    h+=`<div class="items">${g.items.map((x,i)=>`<span class="chip static${gr&&i===0?' g':''}">${esc(x.name)}${gr&&i===0?' · Grundform':''}</span>`).join('')}</div>
+    <div class="two" style="width:100%"><button class="btn" data-a="deck-again">Nochmal</button><button class="btn primary" data-a="deck-know">Gewusst</button></div>`;
+  }
+  return h+`</div>`;
+}
+
+/* ---- Quiz ---- */
+function viewQuiz(){
+  const dom=V.quiz.dom;
+  let h=`<div class="seg"><button class="${dom==='n'?'on':''}" data-a="qdom" data-v="n">Würfe</button><button class="${dom==='k'?'on':''}" data-a="qdom" data-v="k">Boden</button></div>`;
+  h+=`<div class="modes">`;
+  MODES.filter(m=>m.dom.includes(dom)).forEach(m=>{
+    const n=m.id==='combo'?activeCombos().length:THEMES.filter(t=>t.dom===dom).reduce((a,t)=>a+cands(m.id,t).length,0);
+    h+=`<button class="mode" data-a="mode" data-v="${m.id}"${n?'':' disabled'}><div><b>${m.n}</b><span>${m.d}${n?'':' · derzeit keine Fragen'}</span></div><span class="arr">›</span></button>`;
+  });
+  h+=`</div><div class="modes"><button class="mode" data-a="mix"><div><b>Gemischt</b><span>Fragen aus allen Bereichen, 20 Stück</span></div><span class="arr">›</span></button>`;
+  const fx=fixKeys();
+  h+=`<button class="mode" data-a="fix"${fx.length?'':' disabled'}><div><b>Fehlertraining</b><span>${fx.length?fx.length+' Fragen, die noch nicht sitzen':'Noch keine Fehler gespeichert'}</span></div><span class="arr">›</span></button></div>`;
+  return h;
+}
+function fixKeys(){
+  return Object.keys(S.q).filter(k=>S.q[k].w>0&&S.q[k].s<2&&build(k)).slice(0,15);
+}
+function keyGroup(th,key){
+  const [mode,,id]=key.split('|');
+  if(mode!=='cls')return id;
+  const g=th.groups().find(x=>x.items.some(y=>y.id===id)); return g?g.id:null;
+}
+function eligGroups(mode,th){
+  const ids=[...new Set(cands(mode,th).map(k=>keyGroup(th,k)))];
+  return th.groups().filter(g=>ids.includes(g.id));
+}
+function viewSetup(){
+  const su=V.quiz.setup; const m=MODES.find(x=>x.id===su.mode);
+  const ths=THEMES.filter(t=>t.dom===su.dom&&cands(su.mode,t).length);
+  let h=`<div class="row"><button class="x" data-a="setup-back" aria-label="Zurück">‹</button><h2>${m.n}</h2></div>`;
+  if(su.mode!=='combo'){
+    h+=`<div class="card"><div class="eyebrow">Themen</div><div class="wrap">${ths.map(t=>`<button class="chip${su.themes.includes(t.id)?' on':''}" data-a="setup-theme" data-v="${t.id}">${esc(t.label)}</button>`).join('')}</div></div>`;
+    const sel=ths.filter(t=>su.themes.includes(t.id));
+    h+=`<div class="card"><div class="eyebrow">Gruppen</div>${sel.map(t=>`${sel.length>1?`<div class="mut" style="font-size:.85rem">${esc(t.label)}</div>`:''}<div class="wrap">${eligGroups(su.mode,t).map(g=>`<button class="chip${su.excl.includes(t.id+':'+g.id)?'':' on'}" data-a="setup-group" data-v="${t.id}:${g.id}">${esc(g.n)}</button>`).join('')}</div>`).join('')}</div>`;
+  }
+  const opts=su.mode==='type'?[3,5,8]:[5,10,20];
+  h+=`<div class="card"><div class="eyebrow">Anzahl Fragen</div><div class="wrap">${opts.map(n=>`<button class="chip${su.count===n?' on':''}" data-a="setup-count" data-v="${n}">${n}</button>`).join('')}</div></div>`;
+  const avail=setupKeys().length;
+  h+=`<button class="btn primary full" data-a="setup-start"${avail?'':' disabled'}>Starten (${Math.min(avail,su.count)} Fragen)</button>`;
+  return h;
+}
+function setupKeys(){
+  const su=V.quiz.setup; if(su.mode==='combo')return cands('combo',null);
+  return su.themes.flatMap(id=>{const th=TH(id);return cands(su.mode,th).filter(k=>!su.excl.includes(id+':'+keyGroup(th,k)));});
+}
+function startSession(keys,label,again){
+  const qs=keys.map(build).filter(Boolean); if(!qs.length){toast('Keine Fragen verfügbar');return;}
+  V.quiz.sess={qs,i:0,res:[],label,keys:again,q:null,st:null}; nextQ(true);
+}
+function nextQ(first){
+  const s=V.quiz.sess; if(!first)s.i++;
+  if(s.i>=s.qs.length){ V.quiz.res={res:s.res,label:s.label,again:s.keys}; V.quiz.sess=null; V.tab='quiz'; save(); render(); window.scrollTo(0,0); return; }
+  s.q=s.qs[s.i]; s.st={locked:false,chosen:[],found:[],wrong:[],done:false}; render(); window.scrollTo(0,0);
+}
+function viewSess(){
+  const s=V.quiz.sess,q=s.q,st=s.st; const pct=Math.round(s.i/s.qs.length*100);
+  let h=`<div class="qtop"><button class="x" data-a="sess-quit" aria-label="Beenden">✕</button><div class="belt"><i style="width:${pct}%"></i></div><span class="cnt">${s.i+1}/${s.qs.length}</span></div>`;
+  h+=`<div class="card q"><div class="eyebrow">${esc(q.sub)}</div><h2>${esc(q.prompt)}</h2>`;
+  if(q.kind==='single'||q.kind==='multi'){
+    h+=`<div class="opts${q.kind==='multi'?' multi':''}">`;
+    q.options.forEach(o=>{
+      let c='opt';
+      if(st.locked){
+        const isC=q.correct.includes(o.id),isP=st.chosen.includes(o.id);
+        if(isC&&isP)c+=' good'; else if(isP&&!isC)c+=' bad'; else if(isC)c+=' miss';
+      } else if(st.chosen.includes(o.id))c+=' on';
+      h+=`<button class="${c}" data-a="opt" data-v="${o.id}"${st.locked?' disabled':''}><span class="tick"></span>${esc(o.label)}</button>`;
+    });
+    h+=`</div>`;
+    if(q.kind==='multi'&&!st.locked)h+=`<button class="btn primary full" data-a="multi-check"${st.chosen.length?'':' disabled'}>Prüfen</button>`;
+    if(st.locked){
+      const ok=st.ok;
+      h+=`<div class="fb ${ok?'good':'bad'}"><strong>${ok?'Richtig':'Nicht ganz'}</strong><p>${esc(q.explain)}</p></div>
+      <button class="btn primary full" data-a="sess-next">${s.i+1>=s.qs.length?'Ergebnis':'Weiter'}</button>`;
+    }
+  } else {
+    h+=`<p class="mut">${q.total} ${q.total===1?'Technik':'Techniken'} gesucht. Tippe den Namen ein, Schreibvarianten werden erkannt.</p>
+    <div class="tin"><input id="ti" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Technik eingeben" aria-label="Technik eingeben"><button class="btn primary" data-a="type-add">OK</button></div>
+    <div class="sg" id="sg"></div>
+    <div class="found" id="fl"></div>
+    <div id="tf"></div>`;
+  }
+  return h+`</div>`;
+}
+function typeUpdate(){
+  const s=V.quiz.sess,q=s.q,st=s.st;
+  const fl=$('#fl'); if(!fl)return;
+  let h=st.found.map(x=>`<span class="pill good">${esc(x.name)}</span>`).join('')+st.wrong.map(x=>`<span class="pill bad" title="gehört nicht zur Gruppe">${esc(x.name)} ✕</span>`).join('');
+  if(st.done){
+    const miss=q.group.items.filter(x=>!st.found.includes(x));
+    h+=miss.map(x=>`<span class="pill miss">${esc(x.name)}</span>`).join('');
+  }
+  fl.innerHTML=h;
+  const tf=$('#tf'); let t='';
+  if(st.done){
+    t=`<div class="fb ${st.ok?'good':'bad'}"><strong>${st.ok?'Alles gefunden':'Nicht vollständig'}</strong><p>${st.found.length} von ${q.total} genannt${st.wrong.length?', '+st.wrong.length+' nicht zur Gruppe gehörend':''}.</p></div>
+    <button class="btn primary full" data-a="sess-next">${s.i+1>=s.qs.length?'Ergebnis':'Weiter'}</button>`;
+    const ti=$('#ti'),b=document.querySelector('[data-a="type-add"]'); if(ti){ti.disabled=true;} if(b)b.disabled=true;
+  } else {
+    t=`<div class="row sp"><span class="cnt">${st.found.length} von ${q.total}</span><button class="btn" data-a="type-done">Aufgeben / Fertig</button></div>`;
+  }
+  tf.innerHTML=t;
+}
+function typePool(){return V.quiz.sess.q.dom==='n'?actN():K;}
+function typeCommit(it){
+  const s=V.quiz.sess,q=s.q,st=s.st; if(st.done)return;
+  if(st.found.includes(it)||st.wrong.includes(it)){toast('Schon genannt');return;}
+  if(q.group.items.includes(it))st.found.push(it); else st.wrong.push(it);
+  $('#ti').value=''; $('#sg').innerHTML='';
+  if(st.found.length===q.total)typeFinish(); else typeUpdate();
+  const ti=$('#ti'); if(ti&&!st.done)ti.focus();
+}
+function typeAdd(){
+  const ti=$('#ti'); if(!ti||!ti.value.trim())return;
+  const it=resolve(ti.value,typePool());
+  if(!it){toast('Nicht erkannt. Tippe auf einen Vorschlag.');return;}
+  typeCommit(it);
+}
+function typeFinish(){
+  const s=V.quiz.sess,q=s.q,st=s.st; st.done=true; st.ok=st.found.length===q.total&&!st.wrong.length;
+  q.group.items.forEach(x=>recItem(x.id,st.found.includes(x)));
+  rec(q.key,st.ok); s.res.push({ok:st.ok,prompt:q.prompt,detail:st.ok?'':`Genannt ${st.found.length} von ${q.total}`});
+  save(); typeUpdate();
+}
+function typeSuggest(){
+  const ti=$('#ti'),sg=$('#sg'); if(!ti||!sg)return;
+  const n=norm(ti.value); if(n.length<2){sg.innerHTML='';return;}
+  const pool=typePool();
+  const m=pool.filter(x=>[x.name].concat(x.alias).some(a=>norm(a).includes(n)));
+  m.sort((a,b)=>(norm(b.name).startsWith(n)?1:0)-(norm(a.name).startsWith(n)?1:0));
+  sg.innerHTML=m.slice(0,6).map(x=>`<button class="chip" data-a="sg" data-v="${x.id}">${esc(x.name)}</button>`).join('');
+}
+function answer(ids){
+  const s=V.quiz.sess,q=s.q,st=s.st;
+  st.chosen=ids; st.locked=true;
+  const a=q.correct.slice().sort().join(','),b=ids.slice().sort().join(','); st.ok=a===b;
+  if(q.kind==='single'){ q.itemIds.forEach(id=>recItem(id,st.ok)); }
+  else { q.options.forEach(o=>{ const should=q.correct.includes(o.id),did=ids.includes(o.id); recItem(o.id,should===did); }); }
+  rec(q.key,st.ok);
+  s.res.push({ok:st.ok,prompt:q.prompt,detail:st.ok?'':q.explain});
+  save(); render();
+}
+function viewRes(){
+  const r=V.quiz.res; const ok=r.res.filter(x=>x.ok).length; const tot=r.res.length;
+  const miss=r.res.filter(x=>!x.ok);
+  let h=`<div class="card" style="align-items:flex-start"><div class="eyebrow">${esc(r.label)}</div><div class="big">${ok} / ${tot}</div><p class="mut">${ok===tot?'Alles richtig.':ok/tot>=.7?'Solide. Die Fehler kommen im Fehlertraining wieder.':'Noch Luft nach oben. Das Fehlertraining hilft.'}</p></div>`;
+  if(miss.length)h+=`<div class="card"><h3>Zum Nachlesen</h3>${miss.map(m=>`<div><strong>${esc(m.prompt)}</strong><p class="mut">${esc(m.detail)}</p></div>`).join('')}</div>`;
+  h+=`<div class="two"><button class="btn" data-a="res-home">Zur Übersicht</button><button class="btn primary" data-a="res-again">Nochmal</button></div>`;
+  return h;
+}
+
+/* ---- Suche ---- */
+function viewSuche(){
+  return `<div class="tin"><input id="si" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" placeholder="Technik oder Oberbegriff, auch deutsch" aria-label="Suche" value="${esc(V.such.q)}"></div><div id="sr" class="res"></div>`;
+}
+function searchHits(q){
+  const n=norm(String(q).replace(/ß/g,'ss')); if(n.length<2)return[];
+  const sc=r=>{let b=9;r.nk.forEach(k=>{if(k===n)b=Math.min(b,0);else if(k.startsWith(n))b=Math.min(b,1);else if(k.includes(n))b=Math.min(b,2);});return b;};
+  let hits=SEARCH.map(r=>({r,s:sc(r)})).filter(o=>o.s<9);
+  if(!hits.length&&n.length>=5){
+    hits=SEARCH.map(r=>({r,s:3+Math.min(...r.nk.map(k=>Math.min(lev(n,k),lev(n,k.slice(0,n.length)))))})).filter(o=>o.s<=5);
+  }
+  hits.sort((a,b)=>a.s-b.s||a.r.name.length-b.r.name.length);
+  return hits.slice(0,10).map(o=>o.r);
+}
+const chipB=(id,label,on)=>`<button class="chip${on?' on':''}" data-a="lookup" data-v="${id}">${esc(label)}</button>`;
+function suchUpdate(){
+  const r=$('#sr'); if(!r)return; const u=V.such;
+  if(u.sel){r.innerHTML=viewDetail(u.sel);return;}
+  if(!u.q.trim()){
+    r.innerHTML=`<p class="mut">Tippe einen Namen ein, japanisch oder deutsch, oder wähle einen Einstieg.</p>
+    <div class="card"><div class="eyebrow">Oberbegriffe</div><div class="wrap">${['e:nage','e:katame','e:gokyo'].map(i=>chipB(i,E[i].name)).join('')}</div>
+    <div class="eyebrow">Wurfgruppen</div><div class="wrap">${Object.keys(WGN).map(k=>chipB('e:wg_'+k,WGN[k])).join('')}${chipB('e:hS','Shinmeisho-Waza')}${chipB('e:hH','Habukareta-Waza')}</div>
+    <div class="eyebrow">Boden</div><div class="wrap">${OBER.map(o=>chipB('e:o_'+o.id,o.n)).join('')}</div></div>`;
+    return;
+  }
+  const hits=searchHits(u.q);
+  r.innerHTML=hits.length?hits.map(h=>`<button class="hit" data-a="lookup" data-v="${h.id}"><b>${esc(h.name)}</b><span>${esc(h.sub)}</span></button>`).join(''):'<p class="mut">Nichts gefunden. Probiere eine andere Schreibweise oder nur einen Teil des Namens.</p>';
+}
+function viewDetail(id){
+  const e=E[id], it=e?null:byId(id); if(!e&&!it)return '';
+  const back=`<button class="btn" data-a="such-back">‹ Zurück</button>`;
+  let h=`<div>${back}</div><div class="card">`;
+  if(e){
+    h+=`<div class="eyebrow">${esc(e.kind)}</div><h2>${esc(e.name)}</h2><p>${esc(e.desc)}</p>`;
+    const kids=e.kids.map(k=>E[k]?chipB(k,E[k].name):chipB(k,byId(k).name));
+    h+=`<div class="eyebrow">${E[e.kids[0]]?'Enthält':'Techniken ('+e.kids.length+')'}</div><div class="wrap">${kids.join('')}</div>`;
+    return h+'</div>';
+  }
+  const de=DE[it.name]||'';
+  let crumbs,lines=[];
+  if(it.dom==='n'){
+    crumbs=['e:nage','e:wg_'+it.wg].concat(it.gk?['e:gk'+it.gk]:[]).concat(it.hab?['e:h'+it.hab]:[]);
+    lines.push(it.gk?`Gokyo: ${GKN[it.gk-1]} (${it.gk}. Gruppe)`:'Außerhalb der Gokyo');
+  } else {
+    const g=KG.find(x=>x.id===it.g);
+    crumbs=['e:katame','e:o_'+it.o,'e:kg_'+it.g];
+    const n=g.m.length;
+    lines.push(it.grund?(n>1?`Grundform der Gruppe ${g.n}`:`Einzeltechnik (Gruppe ${g.n})`):`Variante in der Gruppe ${g.n}`);
+  }
+  h+=`<div class="eyebrow">${it.dom==='n'?'Wurf':'Bodentechnik'}</div><h2>${esc(it.name)}</h2>`;
+  if(de)h+=`<div class="kv"><small>Deutsch</small><span>${esc(de)}</span></div>`;
+  else h+=`<p class="mut">Deutsche Bezeichnung: keine belegte Angabe vorhanden.</p>`;
+  h+=`<div class="kv"><small>Einordnung</small><span>${lines.map(esc).join('<br>')}</span></div><div class="wrap">${crumbs.map(c=>chipB(c,E[c].name)).join('')}</div>`;
+  const bs=bausteine(it.name);
+  if(bs.length)h+=`<div class="kv"><small>Wortbausteine (sinngemäß)</small><span>${esc(bs.join(' · '))}</span></div>`;
+  if(it.dom==='k'){
+    const sib=K.filter(x=>x.g===it.g&&x!==it);
+    if(sib.length)h+=`<div class="kv"><small>Weitere Techniken der Gruppe</small></div><div class="wrap">${sib.map(x=>chipB(x.id,x.name)).join('')}</div>`;
+  }
+  h+=`</div>`;
+  const q='KODOKAN IJF ACADEMY '+it.name;
+  const own=(S.vl&&S.vl[it.id])||'';
+  const v=VID[it.name];
+  h+=`<div class="card"><h3>Video</h3>`;
+  if(v){
+    h+=`<p class="mut">Video des Kodokan aus der Reihe „KODOKAN × IJF ACADEMY 100 Techniques“: ${esc(v[1])}</p>
+    <a class="btn primary full" href="https://www.youtube.com/watch?v=${v[0]}" target="_blank" rel="noopener noreferrer">Kodokan-Video ansehen</a>`;
+  } else {
+    h+=`<p class="mut">Für diese Technik habe ich kein eigenes Video in der Kodokan-Reihe gefunden. Die Suche öffnet YouTube mit dem Namen der Technik.</p>
+    <a class="btn full" href="https://www.youtube.com/results?search_query=${encodeURIComponent(q)}" target="_blank" rel="noopener noreferrer">Technik auf YouTube suchen</a>`;
+  }
+  h+=`<a class="btn full" href="${YT_PL}" target="_blank" rel="noopener noreferrer">Playlist öffnen</a>`;
+  if(own)h+=`<a class="btn full" href="${esc(own)}" target="_blank" rel="noopener noreferrer">Gespeichertes Video öffnen</a>`;
+  h+=`<div class="tin"><input id="vl" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Eigenen Video-Link einfügen (https://…)" aria-label="Eigener Video-Link" value="${esc(own)}"><button class="btn" data-a="vl-save" data-v="${it.id}">Sichern</button></div></div>`;
+  return h;
+}
+
+/* ---- Fortschritt ---- */
+function viewProg(){
+  const o=overall(); const p=o.t?Math.round(o.s/o.t*100):0;
+  let h=`<div class="card"><div class="eyebrow">Gesamt</div><div class="big">${p}%</div><p class="mut">${o.s} von ${o.t} Techniken sicher. Sicher heißt: zweimal in Folge richtig beantwortet.</p></div>`;
+  THEMES.filter(themeOk).filter(t=>t.id!=='boden').forEach(t=>{
+    const gs=t.groups().filter(g=>g.items.length);
+    h+=`<div class="card"><h3>${esc(t.label)}</h3>${gs.map(g=>{
+      const m=g.items.filter(x=>sure(x.id)).length,pc=Math.round(m/g.items.length*100);
+      return `<div class="prow"><span class="n">${esc(g.n)}</span><div class="bar"><i style="width:${pc}%"></i></div><span class="c">${m}/${g.items.length}</span></div>`;
+    }).join('')}</div>`;
+  });
+  h+=V.resetArm?`<div class="card"><p>Alle gespeicherten Ergebnisse löschen? Das lässt sich nicht rückgängig machen.</p><div class="two"><button class="btn" data-a="reset-no">Abbrechen</button><button class="btn danger" data-a="reset-yes">Ja, löschen</button></div></div>`
+    :`<button class="btn full" data-a="reset-arm">Fortschritt zurücksetzen</button>`;
+  return h;
+}
+
+/* ---- Stoff ---- */
+function viewStoff(){
+  const ex=N.filter(x=>x.extra);
+  let h=`<div class="card"><h3>Würfe außerhalb der Gokyo</h3><p class="mut">Die 40 Würfe der Gokyo sind immer dabei. Hier wählst du, welche weiteren Würfe in Lernkarten und Quiz vorkommen.</p>
+  <div class="two"><button class="btn" data-a="stoff-all">Alle wählen</button><button class="btn" data-a="stoff-none">Keine wählen</button></div></div>`;
+  Object.keys(WGN).forEach(k=>{
+    const l=ex.filter(x=>x.wg===k); if(!l.length)return;
+    h+=`<div class="modes"><div class="eyebrow">${WGN[k]}</div>${l.map(x=>{
+      const on=!S.off.includes(x.id);
+      return `<button class="tog${on?' on':''}" data-a="stoff-t" data-v="${x.id}" role="switch" aria-checked="${on}"><span class="box"></span><span>${esc(x.name)}<small>${esc(x.tag)}</small></span></button>`;
+    }).join('')}</div>`;
+  });
+  const ac=activeCombos().length;
+  h+=`<div class="modes"><div class="eyebrow">Kombinationen, Finten, Konter</div>
+  <button class="tog${S.combo?' on':''}" data-a="stoff-c" role="switch" aria-checked="${S.combo}"><span class="box"></span><span>In Quiz einbeziehen<small>${ac} von ${COMBOS.length} Einträgen aktiv. Ein Eintrag zählt nur, wenn alle beteiligten Würfe gewählt sind.</small></span></button></div>`;
+  h+=`<div class="card"><h3>Vereinslogo</h3><p class="mut">Dein Logo erscheint oben neben dem Titel und wird nur auf diesem Gerät gespeichert. Auf einer eigenen Webseite kannst du stattdessen eine Datei logo.png neben die index.html legen.</p>
+  <label class="btn full" for="logoin">Logo auswählen</label><input class="vh" id="logoin" type="file" accept="image/*">${S.logo?'<button class="btn full" data-a="logo-del">Logo entfernen</button>':''}</div>`;
+  return h;
+}
+
+/* ================= EVENTS ================= */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]'); if(!b||b.disabled)return;
+  const a=b.dataset.a,v=b.dataset.v;
+  const s=V.quiz.sess;
+  switch(a){
+    case 'tab': V.tab=v; V.lern.deck=null; V.quiz.setup=null; V.quiz.res=null; V.resetArm=false; render(); window.scrollTo(0,0); break;
+    case 'lthemes': V.lern.theme=v; render(); break;
+    case 'deck': {
+      const th=TH(v); const gs=th.groups().filter(g=>g.items.length);
+      const order=shuffle(gs).sort((x,y)=>((S.c['c|'+th.id+'|'+x.id]||{s:0}).s)-((S.c['c|'+th.id+'|'+y.id]||{s:0}).s)).map(g=>g.id);
+      V.lern.deck={th:th.id,order,i:0,flip:false,ok:0}; render(); window.scrollTo(0,0); break; }
+    case 'deck-exit': V.lern.deck=null; render(); break;
+    case 'deck-flip': V.lern.deck.flip=true; render(); break;
+    case 'deck-know': case 'deck-again': {
+      const d=V.lern.deck,k='c|'+d.th+'|'+d.order[d.i]; const o=S.c[k]||{s:0};
+      if(a==='deck-know'){o.s++;d.ok++;}else o.s=0; S.c[k]=o; save(); d.i++; d.flip=false; render(); break; }
+    case 'qdom': V.quiz.dom=v; render(); break;
+    case 'mode': {
+      const ths=THEMES.filter(t=>t.dom===V.quiz.dom&&cands(v,t).length);
+      V.quiz.setup={mode:v,dom:V.quiz.dom,themes:[ths[0].id],excl:[],count:v==='type'?3:10}; render(); window.scrollTo(0,0); break; }
+    case 'setup-back': V.quiz.setup=null; render(); break;
+    case 'setup-theme': {
+      const su=V.quiz.setup,i=su.themes.indexOf(v); if(i>=0){if(su.themes.length>1)su.themes.splice(i,1);}else su.themes.push(v); render(); break; }
+    case 'setup-group': {
+      const su=V.quiz.setup,i=su.excl.indexOf(v);
+      if(i>=0)su.excl.splice(i,1); else su.excl.push(v);
+      if(!setupKeys().length){ if(i>=0)su.excl.push(v); else su.excl.splice(su.excl.indexOf(v),1); toast('Mindestens eine Gruppe nötig'); }
+      render(); break; }
+    case 'setup-count': V.quiz.setup.count=+v; render(); break;
+    case 'setup-start': {
+      const su=V.quiz.setup; const keys=pickKeys(setupKeys(),su.count);
+      V.quiz.setup=null; startSession(keys,MODES.find(m=>m.id===su.mode).n,keys); break; }
+    case 'mix': {
+      const lists=['cls','multi','grund','odd','combo'].map(m=>shuffle(m==='combo'?cands('combo',null):THEMES.filter(t=>t.id!=='boden').flatMap(t=>cands(m,t))));
+      const keys=[]; while(keys.length<20&&lists.some(l=>l.length)){lists.forEach(l=>{if(l.length&&keys.length<20)keys.push(l.pop());});}
+      startSession(shuffle(keys),'Gemischt',keys); break; }
+    case 'fix': { const keys=fixKeys(); startSession(shuffle(keys),'Fehlertraining',keys); break; }
+    case 'opt': {
+      const q=s.q,st=s.st; if(st.locked)break;
+      if(q.kind==='single')answer([v]);
+      else{const i=st.chosen.indexOf(v); if(i>=0)st.chosen.splice(i,1); else st.chosen.push(v); render();}
+      break; }
+    case 'multi-check': answer(s.st.chosen.slice()); break;
+    case 'sess-next': nextQ(false); break;
+    case 'sess-quit': V.quiz.sess=null; V.quiz.res=null; save(); render(); break;
+    case 'type-add': typeAdd(); break;
+    case 'type-done': typeFinish(); break;
+    case 'sg': typeCommit(byId(v)); break;
+    case 'res-home': V.quiz.res=null; render(); break;
+    case 'res-again': { const r=V.quiz.res; V.quiz.res=null; startSession(shuffle(r.again),r.label,r.again); break; }
+    case 'reset-arm': V.resetArm=true; render(); break;
+    case 'reset-no': V.resetArm=false; render(); break;
+    case 'reset-yes': S.q={};S.i={};S.c={};V.resetArm=false; save(); render(); toast('Fortschritt gelöscht'); break;
+    case 'stoff-t': { const i=S.off.indexOf(v); if(i>=0)S.off.splice(i,1); else S.off.push(v); save(); render(); break; }
+    case 'stoff-all': S.off=[]; save(); render(); break;
+    case 'stoff-none': S.off=N.filter(x=>x.extra).map(x=>x.id); save(); render(); break;
+    case 'lookup': V.such.sel=v; suchUpdate(); window.scrollTo(0,0); break;
+    case 'such-back': V.such.sel=null; suchUpdate(); break;
+    case 'vl-save': {
+      const el=$('#vl'); const val=(el&&el.value||'').trim();
+      if(!S.vl)S.vl={};
+      if(!val){delete S.vl[v];save();suchUpdate();toast('Link entfernt');break;}
+      if(!/^https:\/\/[^\s"<>]+$/.test(val)){toast('Bitte einen vollständigen https-Link einfügen');break;}
+      S.vl[v]=val; save(); suchUpdate(); toast('Link gespeichert'); break; }
+    case 'logo-del': delete S.logo; save(); render(); break;
+    case 'stoff-c': S.combo=!S.combo; save(); render(); break;
+  }
+});
+document.addEventListener('change',e=>{
+  if(!e.target||e.target.id!=='logoin')return;
+  const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const im=new Image();
+    im.onload=()=>{
+      const k=Math.min(1,240/Math.max(im.width,im.height,1));
+      const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k));
+      try{c.getContext('2d').drawImage(im,0,0,c.width,c.height); S.logo=c.toDataURL('image/png');}catch(_){toast('Bild konnte nicht verarbeitet werden');return;}
+      save(); render(); toast('Logo gespeichert');
+    };
+    im.onerror=()=>toast('Bild konnte nicht gelesen werden');
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(f);
+});
+document.addEventListener('input',e=>{if(e.target.id==='ti')typeSuggest();if(e.target.id==='si'){V.such.q=e.target.value;V.such.sel=null;suchUpdate();}});
+document.addEventListener('keydown',e=>{if(e.target.id==='ti'&&e.key==='Enter'){e.preventDefault();typeAdd();}});
+
+render();
+try{const pl=new Image();pl.onload=()=>{fileLogo=true;if(!V.quiz.sess)render();};pl.src='logo.png';}catch(e){}
+initRemote();
+})();
+</script>
+
+</body>
+</html>
